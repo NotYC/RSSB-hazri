@@ -109,8 +109,42 @@ When generating reports showing a manager their team's data along with current s
 * **PostgreSQL is the Parent:** A UUID must exist in PostgreSQL before it can be used in MongoDB or Redis.
 * **Cascading Deletes/Archiving:** If a user is deleted from PostgreSQL, application code triggers an async background worker to clean up/archive the user's logs in MongoDB and wipe keys from Redis.
 
+## 8. Environment Setup Instructions
+
+### Prerequisites
+* Node.js (LTS version)
+* NestJS CLI installed globally: `npm install -g @nestjs/cli`
+* Access to the Neon (or any PostgreSQL) database
+
+### First-Time Setup on a New Workstation
+1. Clone the repository.
+2. Navigate to the NestJS core: `cd pure-api-backend/core`
+3. Install dependencies: `npm install`
+4. Copy the environment template: `cp .env.example .env`
+5. Open `.env` and replace the placeholder `DATABASE_URL` with your actual Neon connection string:
+   ```
+   DATABASE_URL="postgresql://<username>:<password>@<host>:<port>/<database>?sslmode=require"
+   ```
+6. Generate the Prisma client: `npx prisma generate`
+7. Run migrations (creates tables in the database): `npx prisma migrate dev`
+8. Start the dev server: `npm run start:dev`
+
+### Important Notes
+* The `.env` file is **never committed** to git (it is in `.gitignore`).
+* The `.env.example` file contains the variable names and placeholder values. Always keep it updated when new environment variables are added.
+* Both workstations should point to the **same Neon database URL** to stay in sync during development.
+
+## 9. NestJS Request Lifecycle (Middlewares & Wrappers)
+NestJS categorizes the traditional Express "Middleware" concept into 5 highly specific layers that execute in a strict order:
+1. **Middlewares:** Classic Express middlewares (e.g., logging, body parsing). Runs first.
+2. **Guards:** Strictly for Authentication and Authorization. Returns `true` (allow) or `false` (403 Forbidden). Runs after middlewares.
+3. **Interceptors:** Wrappers for transforming incoming data or wrapping outgoing responses (e.g., standardizing a `{ success: true, data: [] }` JSON format).
+4. **Pipes:** Data validation and transformation. Validates incoming request bodies against DTOs before they hit the controller.
+5. **Exception Filters:** Centralized error handling wrappers. Catches unhandled exceptions (e.g., database crashes) and formats polite JSON error responses.
+
 ## Agent Instructions & Strict Rules
 1. **Syntax Only:** The AI agent acts solely as a syntax writer, following the user's logic precisely.
 2. **No Unapproved Logic:** The agent will not insert arbitrary logic. Architectural decisions must be approved by the user. The agent can only offer suggestions.
 3. **Work Logs:** A `CHANGELOG.md` (or `WORK_LOG.md`) will be maintained and updated only right before a git commit, strictly upon the user's request.
 4. **API Documentation:** A separate `API_DOCS.md` will track all endpoints, routes, and JSON schemas.
+

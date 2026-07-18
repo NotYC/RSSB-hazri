@@ -13,3 +13,8 @@ It is updated strictly upon the user's request prior to a git commit.
 - Installed and configured Prisma, Redis (`ioredis`), JWT auth, and validation packages.
 - Cleaned NestJS boilerplate (`app.controller.ts`, `app.service.ts`).
 - Created initial `README.md` at root.
+- Created `schema.prisma` from raw PostgreSQL definitions and instantiated the schema in Neon via `npx prisma migrate dev`.
+- Generated raw TypeScript Prisma client (`client.ts`) with `typedSql` output configuration.
+- Replaced direct Prisma usage with NestJS Dependency Injection via `TruthDBModule` and `TruthDBService`.
+- Added NestJS Middleware Request Lifecycle (Guards, Interceptors, Pipes, Filters) documentation to `ARCHITECTURE.md`.
+- Added `.env.example` as a template for securely passing connection strings.

@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+import { TruthDBModule } from './truthDB/truthDB.module';
 
 @Module({
-  imports: [],
+  imports: [TruthDBModule],
   controllers: [],
   providers: [],
 })
