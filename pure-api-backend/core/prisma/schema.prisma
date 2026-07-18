@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -10,4 +8,168 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// =============================================================
+// Domain: Identity & Access
+// =============================================================
+
+model users {
+  id              String  @id @default(uuid()) @db.Uuid
+  firstname       String  @db.VarChar(255)
+  lastname        String  @db.VarChar(255)
+  phone_number    String  @db.VarChar(255)
+  email           String  @db.VarChar(255)
+  aadhar_number   BigInt
+  profile_pic     String  @db.VarChar(255)
+  role            String  @db.VarChar(255)
+  adr_house       String  @db.VarChar(255)
+  adr_area        String  @db.VarChar(255)
+  adr_city        String  @db.VarChar(255)
+  adr_state       String  @db.VarChar(255)
+  adr_pincode     String  @db.VarChar(255)
+  is_approved     Boolean
+  sg_endpoint_id  String  @db.Uuid
+
+  // Relations
+  role_ref         roles         @relation(fields: [role], references: [role_name])
+  sg_endpoint_ref  sg_endpoints  @relation(fields: [sg_endpoint_id], references: [id])
+  sewadar_details  sewadar_details?
+  moderator_details moderator_details?
+}
+
+model roles {
+  id        String @id @default(uuid()) @db.Uuid
+  role_name String @unique @db.VarChar(255)
+  desc      String @db.Text
+
+  // Relations
+  users                  users[]
+  role_permission_mapper role_permission_mapper[]
+}
+
+model permissions {
+  id             String @id @default(uuid()) @db.Uuid
+  permission_tag String @db.VarChar(255)
+  desc           String @db.Text
+
+  // Relations
+  role_permission_mapper role_permission_mapper[]
+}
+
+model role_permission_mapper {
+  role_id       String @db.Uuid
+  permission_id String @db.Uuid
+
+  // Relations
+  role       roles       @relation(fields: [role_id], references: [id])
+  permission permissions @relation(fields: [permission_id], references: [id])
+
+  @@id([role_id, permission_id])
+}
+
+// =============================================================
+// Domain: SG Hierarchy (5-level tree)
+// =============================================================
+
+model sg_zones {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(255)
+  code String @db.VarChar(255)
+
+  // Relations
+  sg_states sg_states[]
+}
+
+model sg_states {
+  id      String @id @default(uuid()) @db.Uuid
+  name    String @db.VarChar(255)
+  code    String @db.VarChar(255)
+  zone_id String @db.Uuid
+
+  // Relations
+  zone     sg_zones  @relation(fields: [zone_id], references: [id])
+  sg_areas sg_areas[]
+}
+
+model sg_areas {
+  id       String @id @default(uuid()) @db.Uuid
+  name     String @db.VarChar(255)
+  code     String @db.VarChar(255)
+  state_id String @db.Uuid
+
+  // Relations
+  state      sg_states    @relation(fields: [state_id], references: [id])
+  sg_centers sg_centers[]
+}
+
+model sg_centers {
+  id      String @id @default(uuid()) @db.Uuid
+  name    String @db.VarChar(255)
+  code    String @db.VarChar(255)
+  n_cord  String @db.VarChar(255)
+  e_cord  String @db.VarChar(255)
+  address String @db.Text
+  area_id String @db.Uuid
+
+  // Relations
+  area         sg_areas       @relation(fields: [area_id], references: [id])
+  sg_endpoints sg_endpoints[]
+}
+
+model sg_endpoints {
+  id        String @id @default(uuid()) @db.Uuid
+  type      String @db.VarChar(255)
+  name      String @db.VarChar(255)
+  code      String @db.VarChar(255)
+  n_cord    String @db.VarChar(255)
+  e_cord    String @db.VarChar(255)
+  address   String @db.Text
+  center_id String @db.Uuid
+
+  // Relations
+  center sg_centers @relation(fields: [center_id], references: [id])
+  users  users[]
+}
+
+// =============================================================
+// Domain: Sewa Catalog
+// =============================================================
+
+model sewa_catalog {
+  id   String @id @default(uuid()) @db.Uuid
+  tag  String @db.VarChar(255)
+  name String @db.VarChar(255)
+
+  // Relations
+  sewadar_details   sewadar_details[]
+  moderator_details moderator_details[]
+}
+
+// =============================================================
+// Domain: User Detail Extensions (1:1 off users)
+// =============================================================
+
+model sewadar_details {
+  user_id     String   @id @db.Uuid
+  batch_id    String   @db.VarChar(255)
+  category_id String   @db.Uuid
+  apply_date  DateTime @db.Timestamptz(0)
+  join_date   DateTime @db.Timestamptz(0)
+
+  // Relations
+  user     users        @relation(fields: [user_id], references: [id])
+  category sewa_catalog @relation(fields: [category_id], references: [id])
+}
+
+model moderator_details {
+  user_id     String   @id @db.Uuid
+  mod_id      String   @db.Uuid
+  category_id String   @db.Uuid
+  apply_date  DateTime @db.Timestamptz(0)
+  join_date   DateTime @db.Timestamptz(0)
+
+  // Relations
+  user     users        @relation(fields: [user_id], references: [id])
+  category sewa_catalog @relation(fields: [category_id], references: [id])
 }
